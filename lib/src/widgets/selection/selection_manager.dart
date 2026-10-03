@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../ast/syntax_tree.dart';
@@ -216,6 +217,47 @@ mixin SelectionManagerMixin<T extends StatefulWidget> on State<T>
   }
 
   static const _selectAllReservedTag = 'THIS MARKUP SHOULD NOT APPEAR!';
+
+  @override
+  void userUpdateTextEditingValue(
+      TextEditingValue value, SelectionChangedCause? cause) {
+    textEditingValue = value;
+  }
+
+  @override
+  void bringIntoView(TextPosition position) {
+    // The formula has no scrollable of its own to reveal the position in.
+  }
+
+  @override
+  void copySelection(SelectionChangedCause cause) {
+    final value = textEditingValue;
+    Clipboard.setData(
+        ClipboardData(text: value.selection.textInside(value.text)));
+    hideToolbar();
+  }
+
+  @override
+  void cutSelection(SelectionChangedCause cause) {
+    // Read-only.
+  }
+
+  @override
+  Future<void> pasteText(SelectionChangedCause cause) async {
+    // Read-only.
+  }
+
+  @override
+  void selectAll(SelectionChangedCause cause) {
+    handleSelectionChanged(
+      TextSelection(
+        baseOffset: 0,
+        extentOffset: controller.ast.greenRoot.capturedCursor - 1,
+      ),
+      cause,
+      ExtraSelectionChangedCause.handle,
+    );
+  }
 
   set textEditingValue(TextEditingValue value) {
     // Select All ?

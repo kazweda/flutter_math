@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -60,7 +61,9 @@ mixin WebSelectionControlsManagerMixin<T extends StatefulWidget>
   }
 
   void _handleFocusChange() {
-    if (hasFocus && focusNode.consumeKeyboardToken()) {
+    // The input connection only serves the browser context menu. Elsewhere it
+    // would bring up the software keyboard.
+    if (kIsWeb && hasFocus && focusNode.consumeKeyboardToken()) {
       _openInputConnection();
     } else if (!hasFocus) {
       _closeInputConnectionIfNeeded();

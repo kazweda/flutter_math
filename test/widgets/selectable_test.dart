@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/src/render/layout/line_editable.dart';
 import 'package:flutter_math_fork/src/widgets/selectable.dart';
 import 'package:flutter_math_fork/src/widgets/selection/handle_overlay.dart';
@@ -643,5 +644,57 @@ void main() {
     //   await tester.tap(find.text('Select all'));
     //   expect(onSelectionChangedCallCount, equals(2));
     // });
+    testWidgets(
+      'toolbar buttons receive taps below a top safe area',
+      (WidgetTester tester) async {
+        // A phone with a notch: the toolbar keeps clear of the top padding.
+        tester.view.physicalSize = const Size(1260, 2736);
+        tester.view.devicePixelRatio = 3;
+        tester.view.padding = const FakeViewPadding(top: 204);
+        addTearDown(tester.view.reset);
+        WidgetController.hitTestWarningShouldBeFatal = true;
+        addTearDown(() => WidgetController.hitTestWarningShouldBeFatal = false);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Material(
+              child: ListView(
+                children: <Widget>[
+                  const SizedBox(height: 300),
+                  SelectableMath.tex(r'\frac{a}{b} + c'),
+                  const SizedBox(height: 300),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        String? clipboard;
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          (MethodCall call) async {
+            if (call.method == 'Clipboard.setData') {
+              clipboard = (call.arguments as Map)['text'] as String?;
+            }
+            return null;
+          },
+        );
+        addTearDown(() => tester.binding.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null));
+
+        await tester.longPress(find.byType(SelectableMath));
+        await tester.pumpAndSettle();
+
+        // Fails with a hit test warning if the button is painted outside the
+        // area that receives taps.
+        await tester.tap(find.text('Copy'));
+        await tester.pumpAndSettle();
+        expect(clipboard, isNotEmpty);
+      },
+      variant: const TargetPlatformVariant(<TargetPlatform>{
+        TargetPlatform.android,
+        TargetPlatform.iOS,
+      }),
+    );
   });
 }

@@ -264,7 +264,18 @@ class MathSelectionOverlay {
 
     final endpoint2 = manager.getLocalEndpointForPosition(_selection.end);
 
-    final editingRegion = manager.getLocalEditingRegion();
+    // The toolbar follows toolbarLayerLink, offset back to the global origin,
+    // and is laid out against the whole overlay. So the editing region has to
+    // be global, as in Flutter's SelectionOverlay. With a local region the
+    // toolbar's layout box starts at the formula instead of the screen; on a
+    // device with a top safe area the buttons then end up outside that box,
+    // where they are painted but don't receive taps.
+    final localRegion = manager.getLocalEditingRegion();
+    final rootRenderBox = manager.rootRenderBox;
+    final editingRegion = Rect.fromPoints(
+      rootRenderBox.localToGlobal(localRegion.topLeft),
+      rootRenderBox.localToGlobal(localRegion.bottomRight),
+    );
 
     final isMultiline = false; // TODO
     // endpoints.last.point.dy - endpoints.first.point.dy >

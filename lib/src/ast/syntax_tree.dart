@@ -702,7 +702,10 @@ mixin _ClipChildrenMixin on ParentableNode<GreenNode> {
         head = child;
       }
     }
+    // When both positions fall inside the same child, head already holds
+    // the clipped child.
     if (childIndex2Ceil != childIndex2 &&
+        !(head != null && childIndex2Floor == childIndex1Floor) &&
         childIndex2Floor >= 0 &&
         childIndex2Floor <= children.length - 1) {
       final child = children[childIndex2Floor];

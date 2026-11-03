@@ -62,6 +62,20 @@ void main() {
       );
     });
 
+    test('does not duplicate a part that lies inside one styled node', () {
+      expect(
+        r'\mathit{a+b+c}',
+        toBreakLike([r'\mathit{a+}', r'\mathit{b+}', r'\mathit{c}']),
+      );
+    });
+
+    testWidgets('renders scripts inside a styled node', (tester) async {
+      final breakRes = Math.tex(r'\mathrm{x_1=y_2+z_3}').texBreak();
+      await tester
+          .pumpWidget(MaterialApp(home: Wrap(children: breakRes.parts)));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('api works', (tester) async {
       final widget = Math.tex(r'a+b>c');
       final breakRes = widget.texBreak();
